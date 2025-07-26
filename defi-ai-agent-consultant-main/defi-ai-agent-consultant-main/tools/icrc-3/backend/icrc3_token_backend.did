@@ -1,0 +1,183 @@
+type Account = record {
+  owner : principal;
+  subaccount : opt vec nat8;
+};
+
+type Allowance = record {
+  allowance : nat;
+  expires_at : opt nat64;
+};
+
+type AllowanceArgs = record {
+  account : Account;
+  spender : Account;
+};
+
+type ApproveArgs = record {
+  from_subaccount : opt vec nat8;
+  spender : Account;
+  amount : nat;
+  expected_allowance : opt nat;
+  expires_at : opt nat64;
+  fee : opt nat;
+  memo : opt vec nat8;
+  created_at_time : opt nat64;
+};
+
+type ApproveError = variant {
+  BadFee : record { expected_fee : nat };
+  InsufficientFunds : record { balance : nat };
+  AllowanceChanged : record { current_allowance : nat };
+  Expired : record { ledger_time : nat64 };
+  TooOld;
+  CreatedInFuture : record { ledger_time : nat64 };
+  Duplicate : record { duplicate_of : nat };
+  TemporarilyUnavailable;
+  GenericError : record { error_code : nat; message : text };
+};
+
+type ApproveResult = variant {
+  Ok : nat;
+  Err : ApproveError;
+};
+
+type BlockIndex = nat;
+
+type Burn = record {
+  amount : nat;
+  from : Account;
+  spender : opt Account;
+  memo : opt vec nat8;
+  created_at_time : opt nat64;
+};
+
+type GetBlocksArgs = record {
+  start : BlockIndex;
+  length : nat;
+};
+
+type GetBlocksResult = record {
+  log_length : nat;
+  blocks : vec record { id : nat; block : Value };
+  archived_blocks : vec record {
+    args : vec GetBlocksArgs;
+    callback : func (vec GetBlocksArgs) -> (GetBlocksResult) query;
+  };
+};
+
+type Mint = record {
+  amount : nat;
+  to : Account;
+  memo : opt vec nat8;
+  created_at_time : opt nat64;
+};
+
+type Transaction = record {
+  kind : text;
+  mint : opt Mint;
+  burn : opt Burn;
+  transfer : opt Transfer;
+  approve : opt Approve;
+  timestamp : nat64;
+};
+
+type Transfer = record {
+  amount : nat;
+  from : Account;
+  to : Account;
+  spender : opt Account;
+  memo : opt vec nat8;
+  fee : opt nat;
+  created_at_time : opt nat64;
+};
+
+type TransferArgs = record {
+  from_subaccount : opt vec nat8;
+  to : Account;
+  amount : nat;
+  fee : opt nat;
+  memo : opt vec nat8;
+  created_at_time : opt nat64;
+};
+
+type TransferError = variant {
+  BadFee : record { expected_fee : nat };
+  BadBurn : record { min_burn_amount : nat };
+  InsufficientFunds : record { balance : nat };
+  TooOld;
+  CreatedInFuture : record { ledger_time : nat64 };
+  Duplicate : record { duplicate_of : nat };
+  TemporarilyUnavailable;
+  GenericError : record { error_code : nat; message : text };
+};
+
+type TransferResult = variant {
+  Ok : nat;
+  Err : TransferError;
+};
+
+type TransferFromArgs = record {
+  spender_subaccount : opt vec nat8;
+  from : Account;
+  to : Account;
+  amount : nat;
+  fee : opt nat;
+  memo : opt vec nat8;
+  created_at_time : opt nat64;
+};
+
+type TransferFromResult = variant {
+  Ok : nat;
+  Err : TransferFromError;
+};
+
+type TransferFromError = variant {
+  BadFee : record { expected_fee : nat };
+  BadBurn : record { min_burn_amount : nat };
+  InsufficientFunds : record { balance : nat };
+  InsufficientAllowance : record { allowance : nat };
+  TooOld;
+  CreatedInFuture : record { ledger_time : nat64 };
+  Duplicate : record { duplicate_of : nat };
+  TemporarilyUnavailable;
+  GenericError : record { error_code : nat; message : text };
+};
+
+type Value = variant {
+  Blob : vec nat8;
+  Text : text;
+  Nat : nat;
+  Nat64 : nat64;
+  Int : int;
+  Array : vec Value;
+  Map : vec record { text; Value };
+};
+
+type Approve = record {
+  from : Account;
+  spender : Account;
+  amount : nat;
+  expected_allowance : opt nat;
+  expires_at : opt nat64;
+  memo : opt vec nat8;
+  fee : opt nat;
+  created_at_time : opt nat64;
+};
+
+service : {
+  icrc1_name : () -> (text) query;
+  icrc1_symbol : () -> (text) query;
+  icrc1_decimals : () -> (nat8) query;
+  icrc1_fee : () -> (nat) query;
+  icrc1_metadata : () -> (vec record { text; Value }) query;
+  icrc1_total_supply : () -> (nat) query;
+  icrc1_minting_account : () -> (opt Account) query;
+  icrc1_balance_of : (Account) -> (nat) query;
+  icrc1_transfer : (TransferArgs) -> (TransferResult);
+  icrc2_approve : (ApproveArgs) -> (ApproveResult);
+  icrc2_allowance : (AllowanceArgs) -> (Allowance) query;
+  icrc2_transfer_from : (TransferFromArgs) -> (TransferFromResult);
+  icrc3_get_blocks : (GetBlocksArgs) -> (GetBlocksResult) query;
+  mint : (Account, nat) -> (TransferResult);
+  burn : (Account, nat) -> (TransferResult);
+}

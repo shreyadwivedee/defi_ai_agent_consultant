@@ -1,0 +1,13 @@
+[workspace]
+members = [
+    "backend",
+]
+
+[workspace.dependencies]
+candid = "0.9.6"
+ic-cdk = "0.11.3"
+ic-cdk-macros = "0.8.1"
+ic-stable-structures = "0.5.6"
+serde = { version = "1.0.171", features = ["derive"] }
+serde_bytes = "0.11.12"
+num-traits = "0.2.15"
